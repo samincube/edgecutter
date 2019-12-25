@@ -94,7 +94,7 @@ class BurpExtender(IBurpExtender, IScannerCheck):
                     if slashed_res_status not in ("414","413"):
                     ###TBD
                     
-                        return [sendScanIssue([baseRequestResponse], baseService, baseUrl, "Edge Issue Detected", "Medium", "Tentative", "Edge Issue Detected on: \n<br>" + baseUrl.toString() + "\n<br>\n<br>Found with: " + "a" * x + "[" + str(normal_len) + "*\\]")]
+                        return [sendScanIssue([baseRequestResponse, slashed_reqres], baseService, baseUrl, "Edge Issue Detected", "Medium", "Tentative", "Edge Issue Detected on: \n<br>" + baseUrl.toString() + "\n<br>\n<br>Found with: " + "a" * x + "[" + str(normal_len) + "*\\]")]
 
 class sendScanIssue(IScanIssue):
     def __init__(self, httpMessages, httpService, url, name, severity, confidence, detail):
