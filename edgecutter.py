@@ -1,14 +1,18 @@
 from burp import IBurpExtender
+from burp import IContextMenuFactory
 from burp import IScanIssue
 from burp import IScannerCheck
 from java.io import PrintWriter
 from java.lang import RuntimeException
+from javax.swing import JMenuItem
+from javax.swing import JMenu
+import threading
 
 #
 # Globals
 #
 
-class BurpExtender(IBurpExtender, IScannerCheck):
+class BurpExtender(IBurpExtender, IScannerCheck, IContextMenuFactory):
 
     def registerExtenderCallbacks(self, callbacks):
 
@@ -19,12 +23,39 @@ class BurpExtender(IBurpExtender, IScannerCheck):
         # Extension name
         self._callbacks.setExtensionName("Edgecu++er")
 
+        # Menu
+        self._callbacks.registerContextMenuFactory(self)
+
         # Writers
         self._stdout = PrintWriter(callbacks.getStdout(), True)
         self._stderr = PrintWriter(callbacks.getStderr(), True)
 
         # Register listeners
         self._callbacks.registerScannerCheck(self)
+
+    def createMenuItems(self, invocation):
+
+        menuItems = []        
+        if (invocation.getInvocationContext() == invocation.CONTEXT_MESSAGE_EDITOR_REQUEST):
+
+            edgeMenu = JMenu("Edgecu++er")
+            edgeMenuActionURL = JMenuItem("Run on raw")
+            self.selectedInvocation = invocation
+            edgeMenuActionURL.addActionListener(self.menuClickAction)
+            edgeMenu.add(edgeMenuActionURL)
+            menuItems.append(edgeMenu)
+
+        return menuItems
+
+    def menuClickAction(self, e):
+
+        selectedMessage = self.selectedInvocation.getSelectedMessages()[0]
+        messageRequest = selectedMessage.getRequest()
+        marker = self.selectedInvocation.getSelectionBounds()
+
+        markedInsertionPoint = self._helpers.makeScannerInsertionPoint(str(marker[0])+":"+str(marker[1]),messageRequest,marker[0],marker[1])
+
+        threading.Thread(target=self.doActiveScan, args=(selectedMessage, markedInsertionPoint)).start()
 
     def consolidateDuplicateIssues(self, existing, new):
 
@@ -95,6 +126,9 @@ class BurpExtender(IBurpExtender, IScannerCheck):
                     ###TBD
                     
                         return [sendScanIssue([baseRequestResponse, slashed_reqres], baseService, baseUrl, "Edge Issue Detected", "Medium", "Tentative", "Edge Issue Detected on: \n<br>" + baseUrl.toString() + "\n<br>\n<br>Found with: " + "a" * x + "[" + str(normal_len) + "*\\]")]
+
+        # DEBUG
+        self._stdout.println("Edge detection finished")
 
 class sendScanIssue(IScanIssue):
     def __init__(self, httpMessages, httpService, url, name, severity, confidence, detail):
