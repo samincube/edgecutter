@@ -74,6 +74,7 @@ class BurpExtender(IBurpExtender, IScannerCheck, IContextMenuFactory):
         # TODO: 100k and 1kk symbols (too large)
         # TODO: other detections (see email)
         # TODO: fix \ => %5c encoding that causes lots of 414. For now - partial fix with code check
+        # TODO: use response variations (from Burp API)
 
         # Base HTTP entities
         baseService = baseRequestResponse.getHttpService()
